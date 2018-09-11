@@ -1,0 +1,18 @@
+
+    .canvas {
+        width: 400px;
+        height: 800px;
+        background: #000;
+    }
+    .container {
+        width: 400px;
+        height:800px;
+        position: relative;
+        margin: 0 auto;
+    }
+    .states {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        color: #fff;
+    }

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Offline</title>
+    <style type="text/css">
+    .canvas {
+        width: 400px;
+        height: 800px;
+        background: #000;
+    }
+    .container {
+        width: 400px;
+        height:800px;
+        position: relative;
+        margin: 0 auto;
+    }
+    .states {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        color: #fff;
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="canvas" class="canvas"></canvas>
+        <div class="states" id="states">
+            <div class="score">level: <span id="level">1</span></div>
+            <div class="score">score: <span id="score">100</span></div>
+            <div class="score">life: <span id="life">100</span></div>
+        </div>
+    </div>
+    <div class="panel">
+        <button id="restart">Restart</button>
+        <button id="mute">Mute</button>
+    </div>
+    <script src="build/app.bundle.js"></script>
+</body>
+
+</html>
