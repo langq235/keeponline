@@ -5,24 +5,25 @@ let states = {
     enemyGap: 0,
     mute: false,
     score: 0,
-    level: 1
+    level: 1,
+    lose: 0
 }
 
 let b = document.body
 let $canvas = b.querySelector('#canvas')
 $canvas.width = 400
-$canvas.height = 800
+$canvas.height = 600
 
 kontra.init();
 
 let bullets = []
 let enemys = []
 
-let gap = 0 // 控制时间间隔生成子弹或敌机
+let gap = 0
 let player = kontra.sprite({
     x: 0,
     y: kontra.canvas.height - 100,
-    color: 'red',
+    color: '#7070c5',
     width: 40,
     height: 40,
     speed: 5,
@@ -59,6 +60,7 @@ let player = kontra.sprite({
 
         this.context.beginPath()
         this.context.lineTo(this.x, this.y + this.height);
+        this.context.lineTo(this.x + this.width / 2, this.y + this.height - 20);
         this.context.lineTo(this.x + this.width, this.y + this.height);
         this.context.lineTo(this.x + this.width / 2, this.y);
 
@@ -69,7 +71,7 @@ let player = kontra.sprite({
         let bulletHeight = 5
         let bullet = kontra.sprite({
             x: this.x + this.width / 2 - bulletWidth / 2,
-            y: this.y - this.height,
+            y: this.y,
             color: '#fff',
             width: 5,
             height: 5,
@@ -87,18 +89,28 @@ let player = kontra.sprite({
     }
 });
 
+function randomRgbaColor() {
+    var r = Math.floor(Math.random() * 256);
+    var g = Math.floor(Math.random() * 256);
+    var b = Math.floor(Math.random() * 256);
+    var alpha = 1
+    return `rgb(${r},${g},${b},${alpha})`;
+}
+
 function createEnemy() {
     let enemy = kontra.sprite({
         x: Math.random() * kontra.canvas.width,
         y: 0,
-        color: 'blue',
+        color: randomRgbaColor(),
         width: 40,
-        height: 40,
-        speed: 5,
+        height: 20,
+        speed: (Math.random() * 4) * (1 + (states.level - 1) / 10),
         update: function() {
             this.y += this.speed
             if(this.y > kontra.canvas.height) {
                 this.free = true
+                states.lose++
+                stage.renderLose()
             }
         },
         render: function() {
@@ -106,12 +118,13 @@ function createEnemy() {
 
             this.context.beginPath()
             this.context.lineTo(this.x, this.y);
+            this.context.lineTo(this.x + this.width / 2 , this.y + 10);
             this.context.lineTo(this.x + this.width, this.y);
             this.context.lineTo(this.x + this.width / 2, this.y + this.height);
 
             this.context.fill();
         },
-        life: 10
+        life: 10 * Math.random()
     });
     enemys.push(enemy)
 }
@@ -135,14 +148,25 @@ let stage = {
     $restart: g('restart'),
     $mute: g('mute'),
     $life: g('life'),
+    $level: g('level'),
+    $start: g('start'),
+    $pOver: g('p-over'),
+    $pStart: g('p-start'),
+    $lose: g('lose'),
     renderScore() {
         stage.$score.innerHTML = states.score
     },
     renderLife() {
         stage.$life.innerHTML = player.life
     },
+    renderLevel() {
+        stage.$level.innerHTML = states.level
+    },
+    renderLose() {
+        stage.$lose.innerHTML = states.lose
+    },
     init() {
-        stage.$restart.addEventListener('click', ()=> {
+        function start() {
             enemys = []
             bullets = []
             player.x = 0
@@ -152,16 +176,45 @@ let stage = {
                 enemyGap: 0,
                 mute: false,
                 score: 0,
-                level: 1
+                level: 1,
+                lose: 0
             }
             loop.start()
+            stage.$pOver.style.display = 'none'
+            stage.renderScore()
+            stage.renderLevel()
+            stage.renderLife()
+            stage.renderLose()
+        }
+        stage.$restart.addEventListener('click', ()=> {
+            start()
         })
+        stage.$start.addEventListener('click', ()=> {
+            start()
+            stage.$pStart.style.display = 'none'
+        })
+        stage.renderScore()
+        stage.renderLevel()
+        stage.renderLife()
+        stage.renderLose()
     },
-    restart() {
-        
-    }
+    over() {
+        loop.stop()
+        stage.$pOver.style.display = 'block'
+    },
 }
-stage.init()
+
+let health = kontra.sprite({
+    render: function() {
+        this.context.strokeStyle = 'rgba(255,255,255,.1)';
+        for(let i = 0, j = player.life / 10; i<j; i++) {
+            this.context.lineWidth = 30
+            this.context.beginPath();
+            this.context.arc(kontra.canvas.width / 2, kontra.canvas.height,60 * i, Math.PI, 2*Math.PI);
+            this.context.stroke();
+        }
+    },
+});
 let loop = kontra.gameLoop({
     fps: 60,
     update: function(dt) {
@@ -176,6 +229,8 @@ let loop = kontra.gameLoop({
                     if(enemy.life <= 0) {
                         enemy.free = true
                         states.score += 10
+                        states.level = Math.floor(states.score / 150) + 1
+                        stage.renderLevel()
                         stage.renderScore()
                     }
                     bullet.free = true
@@ -193,7 +248,7 @@ let loop = kontra.gameLoop({
             enemy.free && enemys.splice(i, 1)
         })
         
-        if(states.enemyGap > 1) {
+        if(states.enemyGap > .6) {
             states.enemyGap = 0
             createEnemy()
         }
@@ -206,12 +261,13 @@ let loop = kontra.gameLoop({
                 player.life -= 30
                 stage.renderLife()
                 if(player.life <= 0) {
-                    loop.stop()
+                    stage.over()
                 }
             }
         })
     },
     render: function() {
+        health.render()
         player.render()
         bullets.forEach((bullet)=> {
             bullet.render()
@@ -222,4 +278,4 @@ let loop = kontra.gameLoop({
     }
 });
 
-loop.start();
+stage.init()
